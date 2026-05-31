@@ -20,6 +20,7 @@ std::unique_ptr<ISink> MakePlatformDefaultLogSink() {
 #elif defined(__APPLE__)
   return std::make_unique<AppleLogSink>();
 #else
+  /*创建CLogSink*/
   return std::make_unique<CLogSink>();
 #endif
 }

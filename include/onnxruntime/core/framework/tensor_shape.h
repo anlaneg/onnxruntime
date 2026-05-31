@@ -40,6 +40,7 @@ inline gsl::span<const int64_t> ToConstSpan(const TensorShapeVector& vec) {
   return gsl::make_span(vec);
 }
 
+//TensorShape只用于描述当前tensor的维度数及各维度元素数，
 class TensorShape {
   // We use negative numbers for unknown symbolic dimension. Each negative
   // number represents a unique symbolic dimension.
@@ -56,7 +57,7 @@ class TensorShape {
   TensorShape(TensorShape&& other) noexcept { operator=(std::move(other)); }
   TensorShape& operator=(TensorShape&& other) noexcept;
 
-  TensorShape(gsl::span<const int64_t> dims);
+  TensorShape(gsl::span<const int64_t> dims);/*利用dims初始化*/
   TensorShape(const TensorShapeVector& dims) : TensorShape(gsl::make_span(dims)) {}
   TensorShape(std::initializer_list<int64_t> dims) : TensorShape(gsl::make_span(dims.begin(), dims.end())) {}
   TensorShape(const int64_t* dimension_sizes, size_t dimension_count) : TensorShape(gsl::span<const int64_t>(dimension_sizes, dimension_count)) {}
@@ -64,18 +65,20 @@ class TensorShape {
 
   // Create a TensorShape that points to an existing buffer internally. As no copy is made, 'data' must remain valid for the life of the TensorShape
   static const TensorShape FromExistingBuffer(const std::vector<int64_t>& data) {
+	  /*用 vector 的内存来构造 span*/
     return TensorShape(External{}, gsl::span<int64_t>(const_cast<int64_t*>(data.data()), data.size()));
   }
 
   /**
      Return the dimension specified by <idx>.
   */
-  int64_t operator[](size_t idx) const { return values_[idx]; }
-  int64_t& operator[](size_t idx) { return values_[idx]; }
+  int64_t operator[](size_t idx) const { return values_[idx];/*取idx号元素，右值*/ }
+  int64_t& operator[](size_t idx) { return values_[idx]; /*取idx号元素，左值*/}
 
   bool operator==(const TensorShape& other) const noexcept { return SpanEq(GetDims(), other.GetDims()); }
   bool operator!=(const TensorShape& other) const noexcept { return !(*this == other); }
 
+  /*维度数*/
   size_t NumDimensions() const noexcept {
     return values_.size();
   }
@@ -84,6 +87,7 @@ class TensorShape {
      Copy dims into an array with given size
   */
   void CopyDims(int64_t* dims, size_t num_dims) const {
+	  /*复制前N维的数据到dims中*/
     memcpy(dims, values_.data(), sizeof(int64_t) * std::min(num_dims, NumDimensions()));
   }
 
@@ -93,13 +97,14 @@ class TensorShape {
      and this function does no checks to ensure that
   */
   void CopyDims(int64_t* dims, size_t start_dim, size_t num_dims) const {
+	  /*复制[start_dim,start_dim + num_dims]维的数据到dims中*/
     memcpy(dims, values_.data() + start_dim, sizeof(int64_t) * std::min(num_dims, NumDimensions() - start_dim));
   }
 
   /**
      Return underlying vector representation.
   */
-  gsl::span<const int64_t> GetDims() const { return values_; }
+  gsl::span<const int64_t> GetDims() const { return values_;/*返回span*/ }
 
   TensorShapeVector AsShapeVector() const {
     return ToShapeVector(values_);

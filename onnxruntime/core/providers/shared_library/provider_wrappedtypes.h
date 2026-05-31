@@ -429,8 +429,11 @@ struct ValueInfoProtos final {
   PROVIDER_DISALLOW_ALL(ValueInfoProtos)
 };
 
+/*完全的302,将对其调用发送给g_host*/
 struct FunctionProto final {
+	/*触发g_host->FunctionProto__construct*/
   static std::unique_ptr<FunctionProto> Create() { return g_host->FunctionProto__construct(); }
+  /*触发g_host->FunctionProto__operator_delete*/
   static void operator delete(void* p) { g_host->FunctionProto__operator_delete(reinterpret_cast<FunctionProto*>(p)); }
 
   bool SerializeToString(std::string& string) const { return g_host->FunctionProto__SerializeToString(this, string); }
@@ -440,6 +443,7 @@ struct FunctionProto final {
 
   bool has_name() const { return g_host->FunctionProto__has_name(this); }
   const std::string& name() const { return g_host->FunctionProto__name(this); }
+  /*触发g_host->FunctionProto__set_name*/
   void set_name(const std::string& name) { g_host->FunctionProto__set_name(this, name); }
 
   bool has_doc_string() const { return g_host->FunctionProto__has_doc_string(this); }

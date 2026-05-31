@@ -63,10 +63,10 @@ LaunchKernelStep::LaunchKernelStep(NodeIndex index, std::string_view node_name)
 #endif
 
 Status LaunchKernelStep::Execute(StreamExecutionContext& ctx,
-                                 size_t stream_idx,
+                                 size_t stream_idx/*当前流索引*/,
                                  SessionScope& session_scope,
                                  const bool& terminate_flag,
-                                 bool& continue_flag) {
+                                 bool& continue_flag/*执行完后是否继续下一个节点*/) {
 #ifdef ENABLE_TRAINING
   // legacy code required by ORTTrainer. Should be removed when ORTTrainer is removed
   auto* node_to_execute = ctx.GetNodeToExecute();
@@ -75,7 +75,8 @@ Status LaunchKernelStep::Execute(StreamExecutionContext& ctx,
     return Status::OK();
   }
 #endif
-  Status status = ExecuteKernel(ctx, node_index_, stream_idx, terminate_flag, session_scope);
+  //真正去执行算子 Kernel
+  Status status = ExecuteKernel(ctx, node_index_/*当前节点编号*/, stream_idx, terminate_flag, session_scope);
   continue_flag = status.IsOK();
   return status;
 }

@@ -491,7 +491,7 @@ struct WorkWithCallbackPolicy {
 };
 #endif  // ORT_ENABLE_SESSION_THREADPOOL_CALLBACKS
 
-template <typename CallbackPolicy, typename Tag, unsigned kSize>
+template <typename CallbackPolicy, typename Tag, unsigned kSize/*队列长度*/>
 class RunQueue {
  public:
   using Work = typename CallbackPolicy::Work;
@@ -503,6 +503,7 @@ class RunQueue {
     assert((kSize & (kSize - 1)) == 0);
     assert(kSize > 2);            // why would you do this?
     assert(kSize <= (64 << 10));  // leave enough space for counter
+    /*全部初始化为empty*/
     for (unsigned i = 0; i < kSize; i++) array_[i].state.store(ElemState::kEmpty, std::memory_order_relaxed);
   }
 
@@ -521,10 +522,11 @@ class RunQueue {
     // any attempt to take the same item from the back of the queue.
     do {
       front = front_.load(std::memory_order_relaxed);
-      e = &array_[(front - 1) & kMask];
+      e = &array_[(front - 1) & kMask];/*取front指向的元素*/
       s = e->state.load(std::memory_order_relaxed);
       if (s == ElemState::kRevoked &&
           e->state.compare_exchange_strong(s, ElemState::kBusy, std::memory_order_acquire)) {
+    	  /*状态为kRevoked，且切为kBusy成功，变更为kEmpty*/
         e->state.store(ElemState::kEmpty, std::memory_order_release);
         front = ((front - 1) & kMask2) | (front & ~kMask2);
         front_.store(front, std::memory_order_relaxed);
@@ -535,11 +537,12 @@ class RunQueue {
     // the work is in progress on the item at the front of the queue.
     if (s != ElemState::kReady ||
         !e->state.compare_exchange_strong(s, ElemState::kBusy, std::memory_order_acquire))
-      return Work();
+      return Work();/*无work或者更新work状态失败，认为无work*/
+    /*返回获得的work*/
     Work w = std::move(e->w);
     e->tag = Tag();
     e->state.store(ElemState::kEmpty, std::memory_order_release);
-    front = ((front - 1) & kMask2) | (front & ~kMask2);
+    front = ((front - 1) & kMask2) | (front & ~kMask2);/*front前移*/
     front_.store(front, std::memory_order_relaxed);
     return w;
   }
@@ -547,23 +550,25 @@ class RunQueue {
   // PushBack adds w at the end of the queue.
   // If queue is full returns w, otherwise returns default-constructed Work.
   Work PushBack(Work w) {
+	  /*向此queue中投入work*/
 #ifdef USE_LOCK_FREE_QUEUE
     std::lock_guard<OrtSpinLock> mtx(spin_lock_);
 #else
     std::lock_guard<std::mutex> lock(mutex_);
 #endif
     unsigned back = back_.load(std::memory_order_relaxed);
-    Elem& e = array_[(back - 1) & kMask];
-    ElemState s = e.state.load(std::memory_order_relaxed);
+    Elem& e = array_[(back - 1) & kMask];/*取back位置的元素*/
+    ElemState s = e.state.load(std::memory_order_relaxed);/*取此元素状态*/
     if (s != ElemState::kEmpty ||
         !e.state.compare_exchange_strong(s, ElemState::kBusy, std::memory_order_acquire))
-      return w;
-    back = ((back - 1) & kMask2) | (back & ~kMask2);
+      return w;/*此空间被占用,或者将此空间由empty转busy失败，返回当前值*/
+    /*存入到e处*/
+    back = ((back - 1) & kMask2) | (back & ~kMask2);/*更新back(back前进一格）*/
     back_.store(back, std::memory_order_relaxed);
     e.w = std::move(w);
     e.tag = Tag();
-    e.state.store(ElemState::kReady, std::memory_order_release);
-    return Work();
+    e.state.store(ElemState::kReady, std::memory_order_release);/*置为ready*/
+    return Work();/*返回个空的*/
   }
 
   // PushBackWithTag adds w at the end of the queue.  The tag value can be used on a
@@ -699,9 +704,12 @@ class RunQueue {
   }
 
  private:
+  /*数组长度掩码*/
   static const unsigned kMask = kSize - 1;
+  /*数组长度2倍掩码*/
   static const unsigned kMask2 = (kSize << 1) - 1;
 
+  /*元素状态*/
   enum class ElemState : uint8_t {
     kEmpty,
     kBusy,
@@ -796,10 +804,11 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
  private:
   struct PerThread;
 
+  /*在本实现中的线程入口*/
   static unsigned WorkerLoop(int id, Eigen::ThreadPoolInterface* param) {
     // unsafe downcast
     ThreadPoolTempl* this_ptr = (ThreadPoolTempl*)param;
-    this_ptr->WorkerLoop(id);
+    this_ptr->WorkerLoop(id);/*倒一手，走WorkerLoop实现*/
     return 0;
   }
 
@@ -842,6 +851,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
     // Schedule as opposed to requests for help in parallel sections.
 
     static Tag GetNext() {
+    	/*分配tag*/
       Tag t = Tag(next_tag++);
       if (t.v_ == 0) {
         t = Tag(next_tag++);
@@ -866,7 +876,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
 
   typedef RunQueue<CallbackPolicy, Tag, 1024> Queue;
 
-  ThreadPoolTempl(const CHAR_TYPE* name, int num_threads, int spin_duration_us,
+  ThreadPoolTempl(const CHAR_TYPE* name, int num_threads/*线程数*/, int spin_duration_us,
                   unsigned int spin_backoff_max,
                   Environment& env, const ThreadOptions& thread_options)
       : profiler_(num_threads, name),
@@ -877,7 +887,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
         steal_interval_(std::max(spin_count_ / 100, 1)),
         set_denormal_as_zero_(thread_options.set_denormal_as_zero),
         callback_policy_(thread_options),
-        worker_data_(num_threads),
+        worker_data_(num_threads)/*按线程数准备worker_data*/,
         all_coprimes_(num_threads),
         blocked_(0),
         done_(false) {
@@ -900,7 +910,8 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
       worker_data_.resize(num_threads_);
       for (auto i = 0u; i < num_threads_; i++) {
         worker_data_[i].queue.SetPolicy(&callback_policy_);
-        worker_data_[i].thread.reset(env_.CreateThread(name, i, WorkerLoop, this, thread_options));
+        /*通过env_创建i号线程*/
+        worker_data_[i].thread.reset(env_.CreateThread(name, i, WorkerLoop/*入口函数*/, this, thread_options));
       }
     }
     ORT_CATCH(...) {
@@ -920,20 +931,20 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
   // execute synchronously during Schedule(fn).  Currently the thread pool will only
   // reject work if the queue of pending work is full.
 
-  void Schedule(std::function<void()> fn) override {
+  void Schedule(std::function<void()> fn/*待执行函数*/) override {
     Work work_item = callback_policy_.MakeWork(std::move(fn));
 
     PerThread* pt = GetPerThread();
-    int q_idx = Rand(&pt->rand) % num_threads_;
+    int q_idx = Rand(&pt->rand) % num_threads_;/*选一个线程队列*/
     WorkerData& td = worker_data_[q_idx];
-    Queue& q = td.queue;
-    work_item = q.PushBack(std::move(work_item));
+    Queue& q = td.queue;/*取得此指定的线程队列*/
+    work_item = q.PushBack(std::move(work_item));/*将此work放入*/
     if (!work_item) {
       // The queue accepted the work; ensure that the thread will pick it up
-      td.EnsureAwake();
+      td.EnsureAwake();/*加入队列成功，通知对端*/
     } else {
       // Run the work directly if the queue rejected the work
-      callback_policy_.Execute(work_item);
+      callback_policy_.Execute(work_item);/*加入work失败，直接执行*/
     }
   }
 
@@ -1503,7 +1514,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
     constexpr WorkerData() : thread(), queue() {
     }
     std::unique_ptr<Thread> thread;
-    Queue queue;
+    Queue queue;/*线程负责消费的队列*/
 
     // Each thread has a status, available read-only without locking, and protected
     // by the mutex field below for updates.  The status is used for three
@@ -1717,12 +1728,13 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
   }
 
   // Main worker thread loop.
-  void WorkerLoop(int thread_id) {
+  /*线程入口*/
+  void WorkerLoop(int thread_id/*线程索引*/) {
     PerThread* pt = GetPerThread();
-    WorkerData& td = worker_data_[thread_id];
+    WorkerData& td = worker_data_[thread_id];/*此线程参数*/
     Queue& q = td.queue;
     bool should_exit = false;
-    pt->pool = this;
+    pt->pool = this;/*从属的线程池*/
     pt->thread_id = thread_id;
 
     assert(td.GetStatus() == WorkerData::ThreadStatus::Spinning);
@@ -1819,7 +1831,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
                           // which ensures that all worker threads exit at the same time.
                           blocked_--;
                         } else {
-                          should_exit = true;
+                          should_exit = true;/*跳出循环*/
                         }
                       }
                     }
@@ -1843,7 +1855,7 @@ class ThreadPoolTempl : public onnxruntime::concurrency::ExtendedThreadPoolInter
 
       if (w) {
         td.SetActive();
-        callback_policy_.Execute(w);
+        callback_policy_.Execute(w);/*执行此work*/
         profiler_.LogRun(thread_id);
         td.SetSpinning();
       }

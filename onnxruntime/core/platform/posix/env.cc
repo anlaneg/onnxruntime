@@ -65,6 +65,7 @@ namespace {
 constexpr int OneMillion = 1000000;
 
 static void UnmapFile(void* addr, size_t len) noexcept {
+  /*移除此地址映射*/
   int ret = munmap(addr, len);
   if (ret != 0) {
     auto [err_no, err_msg] = GetErrnoInfo();
@@ -139,15 +140,15 @@ class PosixThread : public EnvThread {
   };
 
  public:
-  PosixThread(const ORTCHAR_T* name_prefix, int index,
-              unsigned (*start_address)(int id, Eigen::ThreadPoolInterface* param), Eigen::ThreadPoolInterface* param,
+  PosixThread(const ORTCHAR_T* name_prefix/*名称前缀*/, int index/*线程索引*/,
+              unsigned (*start_address/*入口函数*/)(int id, Eigen::ThreadPoolInterface* param), Eigen::ThreadPoolInterface* param,
               const ThreadOptions& thread_options) {
     ORT_ENFORCE(index >= 0, "Negative thread index is not allowed");
     custom_create_thread_fn = thread_options.custom_create_thread_fn;
     custom_thread_creation_options = thread_options.custom_thread_creation_options;
     custom_join_thread_fn = thread_options.custom_join_thread_fn;
 
-    auto param_ptr = std::make_unique<Param>(name_prefix, index, start_address, param);
+    auto param_ptr = std::make_unique<Param>(name_prefix, index/*索引*/, start_address/*入口函数*/, param/*其它参数*/);
     if (narrow<size_t>(index) < thread_options.affinities.size()) {
       param_ptr->affinity = thread_options.affinities[index];
     }
@@ -159,6 +160,7 @@ class PosixThread : public EnvThread {
       }
       param_ptr.release();
     } else {
+    	/*初始化pthread attr*/
       pthread_attr_t attr;
       int s = pthread_attr_init(&attr);
       if (s != 0) {
@@ -175,7 +177,8 @@ class PosixThread : public EnvThread {
         }
       }
 
-      s = pthread_create(&hThread, &attr, ThreadMain, param_ptr.get());
+      /*创建线程*/
+      s = pthread_create(&hThread, &attr, ThreadMain/*指明线程入口*/, param_ptr.get());
       if (s != 0) {
         auto [err_no, err_msg] = GetErrnoInfo();
         ORT_THROW("pthread_create failed, error code: ", err_no, " error msg: ", err_msg);
@@ -217,6 +220,7 @@ class PosixThread : public EnvThread {
             LOGS_DEFAULT(ERROR) << "cpu " << id + 1 << " does not exist, skipping it for affinity setting";
           }
         }
+        /*设置线程亲合性*/
         auto ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
         if (0 == ret) {
           LOGS_DEFAULT(VERBOSE) << "pthread_setaffinity_np succeed for thread: " << syscall(SYS_gettid)
@@ -234,7 +238,7 @@ class PosixThread : public EnvThread {
       }
 #endif
       // Ignore the returned value for now
-      p->start_address(p->index, p->param);
+      p->start_address(p->index/*线程索引*/, p->param);
     }
     ORT_CATCH(...) {
       // Ignore exceptions
@@ -250,10 +254,12 @@ class PosixThread : public EnvThread {
 class PosixEnv : public Env {
  public:
   static PosixEnv& Instance() {
+	  /*返回posix env封装*/
     static PosixEnv default_env;
     return default_env;
   }
 
+  /*负责posix thread创建*/
   EnvThread* CreateThread(const ORTCHAR_T* name_prefix, int index,
                           unsigned (*start_address)(int id, Eigen::ThreadPoolInterface* param),
                           Eigen::ThreadPoolInterface* param, const ThreadOptions& thread_options) override {
@@ -508,6 +514,7 @@ class PosixEnv : public Env {
     return Status::OK();
   }
 
+  /*打开文件并置只读*/
   common::Status FileOpenRd(const std::string& path, /*out*/ int& fd) const override {
     fd = open(path.c_str(), O_RDONLY);
     if (0 > fd) {
@@ -666,6 +673,7 @@ class PosixEnv : public Env {
 // REGISTER_FILE_SYSTEM("", PosixFileSystem);
 // REGISTER_FILE_SYSTEM("file", LocalPosixFileSystem);
 Env& Env::Default() {
+	/*返回postix环境实例*/
   return PosixEnv::Instance();
 }
 

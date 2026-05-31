@@ -34,6 +34,7 @@
 namespace Ort {
 
 namespace detail {
+/*扔状态异常*/
 inline void ThrowStatus(const Status& st) {
   std::string error_message = st.GetErrorMessage();
   OrtErrorCode error_code = st.GetErrorCode();
@@ -43,6 +44,7 @@ inline void ThrowStatus(const Status& st) {
 
 inline void ThrowOnError(OrtStatus* ort_status) {
   if (ort_status) {
+	  /*状态不为0，扔异常*/
     Ort::Status st(ort_status);
     detail::ThrowStatus(st);
   }
@@ -916,8 +918,9 @@ inline Status ProfilingEventsContainerImpl<T>::AddEvents(const std::vector<Profi
 }
 }  // namespace detail
 
+/*利用logleve,logid初始化Env*/
 inline Env::Env(OrtLoggingLevel logging_level, _In_ const char* logid) {
-  ThrowOnError(GetApi().CreateEnv(logging_level, logid, &p_));
+  ThrowOnError(GetApi().CreateEnv(logging_level, logid, &p_));/*创建Env,如失败扔异常*/
   if (strcmp(logid, "onnxruntime-node") == 0) {
     ThrowOnError(GetApi().SetLanguageProjection(p_, OrtLanguageProjection::ORT_PROJECTION_NODEJS));
   } else {

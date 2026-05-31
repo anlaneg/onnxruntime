@@ -10,6 +10,7 @@ namespace logging {
 
 constexpr const char* SYSLOG_LEVEL = "76432";
 
+/*syslog输出*/
 void SysLogSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
   std::stringstream msg;
 

@@ -6,9 +6,9 @@
 onnxruntime::ProviderHost* g_host{};
 
 onnxruntime::ProviderHost* Provider_GetHost() {
-  return g_host;
+  return g_host;/*取g_host*/
 }
 
 void Provider_SetHost(onnxruntime::ProviderHost* p) {
-  g_host = p;
+  g_host = p;/*设置g_host*/
 }

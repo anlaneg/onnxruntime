@@ -387,6 +387,7 @@ static OrtStatus* CreateSessionAndLoadSingleModelImpl(_In_ const OrtSessionOptio
   if (load_config_from_model) {
 #if !defined(ORT_MINIMAL_BUILD)
     if (model_path != nullptr) {
+    	/*通过路径，创建session*/
       sess = std::make_unique<onnxruntime::InferenceSession>(
           options == nullptr ? onnxruntime::SessionOptions() : options->value,
           env,
@@ -445,6 +446,7 @@ static OrtStatus* CreateSessionAndLoadSingleModelImpl(_In_ const OrtSessionOptio
 #endif
   } else {
     if (model_path != nullptr) {
+    	/*加载模型*/
       ORT_API_RETURN_IF_STATUS_NOT_OK(sess->Load(model_path));
     } else {
       ORT_API_RETURN_IF_STATUS_NOT_OK(sess->Load(model_data, model_data_length_int));
@@ -459,8 +461,8 @@ static OrtStatus* CreateSessionAndLoadSingleModelImpl(_In_ const OrtSessionOptio
 static OrtStatus* CreateSessionAndLoadModelImpl(_In_ const OrtSessionOptions* options,
                                                 const onnxruntime::Environment& env,
                                                 _In_opt_z_ const ORTCHAR_T* model_path,
-                                                _In_opt_ const void* model_data,
-                                                size_t model_data_length,
+                                                _In_opt_ const void* model_data/*模型数据*/,
+                                                size_t model_data_length/*默认数据长度*/,
                                                 std::unique_ptr<onnxruntime::InferenceSession>& sess) {
   // `model_path` could be a single ONNX file path, an ORT format model path, or a model package directory.
   const ORTCHAR_T* model_path_to_use = model_path;
@@ -532,6 +534,7 @@ static OrtStatus* CreateSessionAndLoadModelImpl(_In_ const OrtSessionOptions* op
                                      "model variants' constraints in the manifest json or metadata json.");
       }
 
+      /*创建session并加载模型*/
       ORT_API_RETURN_IF_ERROR(CreateSessionAndLoadSingleModelImpl(options_to_use, env, model_path_to_use,
                                                                   model_data, model_data_length, sess));
 
@@ -647,10 +650,10 @@ static OrtStatus* CreateSessionAndLoadModelImpl(_In_ const OrtSessionOptions* op
 // Caller should provide either model_path, or modal_data + model_data_length.
 OrtStatus* CreateSessionAndLoadModel(_In_ const OrtSessionOptions* options,
                                      _In_ const OrtEnv* env,
-                                     _In_opt_z_ const ORTCHAR_T* model_path,
+                                     _In_opt_z_ const ORTCHAR_T* model_path/*模型路径*/,
                                      _In_opt_ const void* model_data,
                                      size_t model_data_length,
-                                     std::unique_ptr<onnxruntime::InferenceSession>& sess) {
+                                     std::unique_ptr<onnxruntime::InferenceSession>& sess/*出参，创建的session*/) {
   return CreateSessionAndLoadModelImpl(options, env->GetEnvironment(), model_path, model_data, model_data_length, sess);
 }
 

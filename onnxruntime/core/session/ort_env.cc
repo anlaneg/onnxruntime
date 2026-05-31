@@ -59,6 +59,7 @@ OrtEnvPtr OrtEnv::GetOrCreateInstance(const OrtEnv::LoggingManagerConstructionIn
                                       const OrtKeyValuePairs* config_entries) {
   std::lock_guard<std::mutex> lock(m_);
   if (!p_instance_) {
+	  /*还未得到env指针，初始化*/
     std::unique_ptr<LoggingManager> lmgr;
     std::string name = lm_info.logid;
 
@@ -67,17 +68,20 @@ OrtEnvPtr OrtEnv::GetOrCreateInstance(const OrtEnv::LoggingManagerConstructionIn
       sink = std::make_unique<UserLoggingSink>(lm_info.logging_function, lm_info.logger_param);
 
     } else {
+    	/*取得默认log sink*/
       sink = MakePlatformDefaultLogSink();
     }
     auto etwOverrideSeverity = logging::OverrideLevelWithEtw(static_cast<Severity>(lm_info.default_warning_level));
     sink = EnhanceSinkWithEtw(std::move(sink), static_cast<Severity>(lm_info.default_warning_level),
                               etwOverrideSeverity);
+    /*创建logmanager*/
     lmgr = std::make_unique<LoggingManager>(std::move(sink),
                                             std::min(static_cast<Severity>(lm_info.default_warning_level), etwOverrideSeverity),
                                             false,
                                             LoggingManager::InstanceType::Default,
                                             &name);
 
+    /*创建Environment*/
     const bool create_global_thread_pools = tp_options != nullptr;
     std::unique_ptr<onnxruntime::Environment> env;
     status = onnxruntime::Environment::Create(std::move(lmgr), env, tp_options,

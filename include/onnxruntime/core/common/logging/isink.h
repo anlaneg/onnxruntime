@@ -12,6 +12,7 @@ namespace onnxruntime {
 namespace logging {
 class ISink {
  public:
+  /*默认是BaseSink*/
   explicit ISink(SinkType type = SinkType::BaseSink) : type_(type) {}
 
   SinkType GetType() const { return type_; }
@@ -23,7 +24,7 @@ class ISink {
      @param message The captured message.
   */
   void Send(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
-    SendImpl(timestamp, logger_id, message);
+    SendImpl(timestamp, logger_id, message);/*触发sendImpl，使上层实现*/
   }
 
   /**

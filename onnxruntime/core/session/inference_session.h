@@ -767,7 +767,7 @@ class InferenceSession {
   std::shared_ptr<onnxruntime::Model> model_;
 
   // The file path of where the model was loaded. e.g. /tmp/test_squeezenet/model.onnx
-  PathString model_location_;
+  PathString model_location_;/*模型路径*/
 
   // Input, Output and Weight tensor data types
   std::string input_data_type_;

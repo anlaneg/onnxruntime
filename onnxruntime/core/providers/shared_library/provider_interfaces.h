@@ -167,7 +167,7 @@ struct ConstGraphNodes_Iterator {
 #pragma warning(push)
 #pragma warning(disable : 26436)
 #endif
-struct ProviderHost {
+struct ProviderHost {/*纯定义接口*/
   virtual const OrtApiBase* OrtGetApiBase() = 0;
 
   virtual Status GetOptimizerByName(const std::string& name,

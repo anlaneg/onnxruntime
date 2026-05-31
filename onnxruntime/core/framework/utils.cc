@@ -621,6 +621,7 @@ ExecuteGraphImpl(const SessionState& session_state,
 
   // see if we can skip copies due to the types of execution providers available
   if (device_copy_checks.status == DeviceCopyCheck::NoCopy) {
+	  /*输入与输出同在cpu不需要copy数据，直接执行模型*/
     // no device copies are needed so simple execute
     auto status = (ExecuteThePlan(session_state,
                                   feeds_fetches_info.feeds_mlvalue_idxs, feeds,
@@ -632,7 +633,7 @@ ExecuteGraphImpl(const SessionState& session_state,
                                   terminate_flag,
                                   only_execute_path_to_fetches,
                                   // single thread mode
-                                  single_thread_mode,
+                                  single_thread_mode/*是否单线程执行*/,
                                   run_profiler));
     ORT_RETURN_IF_ERROR(status);
   } else {
@@ -713,8 +714,8 @@ ExecuteGraphImpl(const SessionState& session_state,
 
 common::Status ExecuteGraph(const SessionState& session_state,
                             FeedsFetchesManager& feeds_fetches_manager,
-                            gsl::span<const OrtValue> feeds, std::vector<OrtValue>& fetches,
-                            ExecutionMode execution_mode, const bool& terminate_flag,
+                            gsl::span<const OrtValue> feeds/*输入数据*/, std::vector<OrtValue>& fetches/*输出结果存放位置*/,
+                            ExecutionMode execution_mode/*执行模式：串行 / 并行*/, const bool& terminate_flag/*终止标志（可以中途停止推理）*/,
                             const logging::Logger& logger,
 #ifdef ORT_ENABLE_STREAM
                             DeviceStreamCollectionHolder& device_stream_collection_holder,

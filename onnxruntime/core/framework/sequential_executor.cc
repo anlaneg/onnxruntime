@@ -477,6 +477,7 @@ onnxruntime::Status ExecuteKernel(StreamExecutionContext& ctx,
                                   size_t stream_idx,
                                   const bool& terminate_flag,
                                   SessionScope& session_scope) {
+	//获取当前节点的 Kernel（算子实现）
   auto* p_kernel = ctx.GetSessionState().GetKernel(idx);
   if (p_kernel->KernelDef().OpName() == "YieldOp") {
     // Do not execute YieldOp (it is an no-op anyways).
@@ -498,6 +499,7 @@ onnxruntime::Status ExecuteKernel(StreamExecutionContext& ctx,
   onnxruntime::Status status;
   auto& logger = ctx.GetLogger();
   if (p_kernel->IsAsync()) {
+	  /*当前不支持异步*/
     ORT_THROW("Async Kernel Support is not implemented yet.");
   } else {
     KernelScope kernel_scope(session_scope, kernel_ctx, *p_kernel);
@@ -532,6 +534,7 @@ onnxruntime::Status ExecuteKernel(StreamExecutionContext& ctx,
         status = kernel_ctx.SetOutputMLValue(0, cache.get()->at(cached_arg_name));
       }
 #else
+      //执行算子的真正计算
       status = p_kernel->Compute(&kernel_ctx);
 
 #if !defined(ORT_MINIMAL_BUILD)
@@ -638,6 +641,7 @@ onnxruntime::Status ExecuteThePlan(const SessionState& session_state, gsl::span<
                                    const bool only_execute_path_to_fetches,
                                    bool single_thread_mode,
                                    profiling::Profiler* run_profiler) {
+	/*取执行计划*/
   auto* execution_plan = session_state.GetExecutionPlan();
   VLOGS(logger, 0) << "Number of streams: " << execution_plan->execution_plan.size();
   int32_t valid_streams = 0;
@@ -682,9 +686,11 @@ onnxruntime::Status ExecuteThePlan(const SessionState& session_state, gsl::span<
 
   SessionScope session_scope(session_state, ctx.GetExecutionFrame(), run_profiler);
 
+  /*线程池（如单线程，则直接为NULL)*/
   auto* tp = single_thread_mode ? nullptr : session_state.GetInterOpThreadPool();
 
   for (size_t i = 0; i < execution_plan->execution_plan.size(); ++i) {
+	  // 如果当前流没有计算步骤，跳过
     if (execution_plan->execution_plan[i]->steps_.empty()) {
       // execution context is initialized with number of valid streams
       // for invalid stream (0 steps), it doesn't count in number of tasks
@@ -692,7 +698,8 @@ onnxruntime::Status ExecuteThePlan(const SessionState& session_state, gsl::span<
       // ctx.CompleteTask();
     } else {
       concurrency::ThreadPool::Schedule(tp, [i, &ctx, &terminate_flag, &session_scope]() {
-        RunSince(i, ctx, session_scope, terminate_flag, 0);
+        /*真正执行所有算子*/
+    	  RunSince(i/*当前要执行的流编号*/, ctx, session_scope, terminate_flag, 0/*从第0步开始执行*/);
       });
     }
   }

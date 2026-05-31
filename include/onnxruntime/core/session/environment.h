@@ -233,6 +233,7 @@ class Environment {
   void RemoveConfigEntry(const std::string& key);
 
   std::unique_ptr<logging::LoggingManager> logging_manager_;
+  /*intra线程池*/
   std::unique_ptr<onnxruntime::concurrency::ThreadPool> intra_op_thread_pool_;
   std::unique_ptr<onnxruntime::concurrency::ThreadPool> inter_op_thread_pool_;
   bool create_global_thread_pools_{false};

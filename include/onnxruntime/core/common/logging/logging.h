@@ -352,7 +352,7 @@ class Logger {
   const OrtLogger* ToExternal() const { return reinterpret_cast<const OrtLogger*>(this); }
 
  private:
-  const LoggingManager* logging_manager_;
+  const LoggingManager* logging_manager_;/*所属的manager*/
   const std::string id_;
   Severity min_severity_;
   const bool filter_user_data_;

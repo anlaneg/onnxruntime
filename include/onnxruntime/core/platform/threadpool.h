@@ -264,8 +264,10 @@ class ThreadPool {
   static void Schedule(ThreadPool* tp,
                        std::function<void()> fn) {
     if (tp) {
+    	/*如果提供的tp不为NULL，则由tp来调度*/
       tp->Schedule(fn);
     } else {
+    	/*直接调用*/
       fn();
     }
   }
@@ -451,7 +453,7 @@ class ThreadPool {
 
   std::string StopProfiling();
 
-  ThreadOptions thread_options_;
+  ThreadOptions thread_options_;/*线程池配置*/
 
   // If a thread pool is created with degree_of_parallelism != 1 then an underlying
   // EigenThreadPool is used to create OS threads and handle work distribution to them.

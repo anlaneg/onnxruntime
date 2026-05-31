@@ -40,7 +40,7 @@ TensorShape& TensorShape::operator=(TensorShape&& other) noexcept {
 
 void TensorShape::Allocate(size_t size) {
   if (values_.size() == size)
-    return;
+    return;/*长度相等，不处理*/
 
   allocated_buffer_.reset();
 
@@ -55,11 +55,13 @@ void TensorShape::Allocate(size_t size) {
  * Return the total number of elements. Returns 1 for an empty (rank 0) TensorShape.
  */
 int64_t TensorShape::Size() const {
+	/*返回数据长度*/
   int64_t size = SizeHelper(0, values_.size());
   // should we cache the size? as multiple operation may be expensive.
   return size;
 }
 
+/*从开头乘到指定维度（不包含）*/
 int64_t TensorShape::SizeToDimension(size_t dimension) const {
   const size_t num_dims = values_.size();
   ORT_ENFORCE(dimension <= num_dims,
@@ -70,6 +72,7 @@ int64_t TensorShape::SizeToDimension(size_t dimension) const {
   return size;
 }
 
+/*从第 n 维开始到最后的乘积*/
 int64_t TensorShape::SizeFromDimension(size_t dimension) const {
   const size_t num_dims = values_.size();
   ORT_ENFORCE(dimension <= num_dims,
@@ -80,6 +83,7 @@ int64_t TensorShape::SizeFromDimension(size_t dimension) const {
   return size;
 }
 
+/*分片*/
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
   ORT_ENFORCE(dimstart <= dimend && dimend <= values_.size(),
               "Invalid tensor shape slice argument.");
@@ -95,10 +99,10 @@ std::string TensorShape::ToString() const {
   bool first = true;
   for (auto dim : GetDims()) {
     if (!first) {
-      result.append(",");
+      result.append(",");/*添加分隔符*/
     }
 
-    result.append(std::to_string(dim));
+    result.append(std::to_string(dim));/*添加此元素*/
     first = false;
   }
   result.append("}");
@@ -106,12 +110,14 @@ std::string TensorShape::ToString() const {
   return result;
 }
 
+/*this[i]用于返回各维度的元素（数字）数目，通过此可获得总维度大小
+ * （也即stride，该维度每增加 1，内存里要跳过多少个元素）*/
 int64_t TensorShape::SizeHelper(size_t start, size_t end) const {
   // Must return 1 for an empty sequence
   SafeInt<int64_t> size = 1;  // this is used to calculate the size, which is used for memory allocations, so validate no overflow
   for (size_t i = start; i < end; i++) {
-    if ((*this)[i] < 0) return -1;
-    size *= (*this)[i];
+    if ((*this)[i] < 0) return -1;/*维度元素不得为负数*/
+    size *= (*this)[i];/*连乘增加大小*/
   }
   return size;
 }

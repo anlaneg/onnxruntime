@@ -210,8 +210,9 @@ ORT_API_STATUS_IMPL(OrtApis::CreateEnvWithCustomLogger, OrtLoggingFunction loggi
   API_IMPL_END
 }
 
+/*创建Env*/
 ORT_API_STATUS_IMPL(OrtApis::CreateEnv, OrtLoggingLevel logging_level,
-                    _In_ const char* logid, _Outptr_ OrtEnv** out) {
+                    _In_ const char* logid, _Outptr_ OrtEnv** out/*出参*/) {
   API_IMPL_BEGIN
   OrtEnv::LoggingManagerConstructionInfo lm_info{nullptr, nullptr, logging_level, logid};
   Status status;
@@ -918,8 +919,9 @@ ORT_API_STATUS_IMPL(OrtApis::EnableOrtCustomOps, _Inout_ OrtSessionOptions* opti
   API_IMPL_END
 }
 
-ORT_API_STATUS_IMPL(OrtApis::CreateSession, _In_ const OrtEnv* env, _In_ const ORTCHAR_T* model_path,
-                    _In_ const OrtSessionOptions* options, _Outptr_ OrtSession** out) {
+/*利用模型path创建session*/
+ORT_API_STATUS_IMPL(OrtApis::CreateSession, _In_ const OrtEnv* env, _In_ const ORTCHAR_T* model_path/*模型路径*/,
+                    _In_ const OrtSessionOptions* options, _Outptr_ OrtSession** out/*出参，创建的session*/) {
   API_IMPL_BEGIN
   std::unique_ptr<onnxruntime::InferenceSession> sess;
   *out = nullptr;
@@ -930,11 +932,12 @@ ORT_API_STATUS_IMPL(OrtApis::CreateSession, _In_ const OrtEnv* env, _In_ const O
   API_IMPL_END
 }
 
-ORT_API_STATUS_IMPL(OrtApis::CreateSessionFromArray, _In_ const OrtEnv* env, _In_ const void* model_data,
-                    size_t model_data_length, _In_ const OrtSessionOptions* options, _Outptr_ OrtSession** out) {
+/*利用模型内容创建session*/
+ORT_API_STATUS_IMPL(OrtApis::CreateSessionFromArray, _In_ const OrtEnv* env, _In_ const void* model_data/*模型内容*/,
+                    size_t model_data_length/*内容长度*/, _In_ const OrtSessionOptions* options, _Outptr_ OrtSession** out) {
   API_IMPL_BEGIN
   std::unique_ptr<onnxruntime::InferenceSession> sess;
-  ORT_API_RETURN_IF_ERROR(CreateSessionAndLoadModel(options, env, nullptr, model_data, model_data_length, sess));
+  ORT_API_RETURN_IF_ERROR(CreateSessionAndLoadModel(options, env, nullptr/*路径为空*/, model_data, model_data_length, sess));
   ORT_API_RETURN_IF_ERROR(InitializeSession(options, *sess));
   *out = reinterpret_cast<OrtSession*>(sess.release());
   return nullptr;
@@ -991,6 +994,7 @@ ORT_API_STATUS_IMPL(OrtApis::SetEpDynamicOptions, _Inout_ OrtSession* sess,
   API_IMPL_END
 }
 
+/*调用session->Run*/
 ORT_API_STATUS_IMPL(OrtApis::Run, _Inout_ OrtSession* sess, _In_opt_ const OrtRunOptions* run_options,
                     _In_reads_(input_len) const char* const* input_names,
                     _In_reads_(input_len) const OrtValue* const* input, size_t input_len,
@@ -4412,16 +4416,16 @@ static constexpr OrtApi ort_api_1_to_27 = {
     // NOTE: The ordering of these fields MUST not change after that version has shipped since existing binaries depend on this ordering.
 
     // Shipped as version 1 - DO NOT MODIFY (see above text for more information)
-    &OrtApis::CreateStatus,
-    &OrtApis::GetErrorCode,
-    &OrtApis::GetErrorMessage,
+    &OrtApis::CreateStatus,/*创建OrtStatus结构体*/
+    &OrtApis::GetErrorCode,/*从OrtStatus结构体中取错误码*/
+    &OrtApis::GetErrorMessage,/*从OrtStatus结构体中取报错信息*/
 
     &OrtApis::CreateEnv,
     &OrtApis::CreateEnvWithCustomLogger,
     &OrtApis::EnableTelemetryEvents,
     &OrtApis::DisableTelemetryEvents,
 
-    &OrtApis::CreateSession,
+    &OrtApis::CreateSession,/*利用模型path创建session,加载模型*/
     &OrtApis::CreateSessionFromArray,
     &OrtApis::Run,
 
@@ -4975,7 +4979,7 @@ static_assert(std::string_view(ORT_VERSION) == "1.27.0",
 
 ORT_API(const OrtApi*, OrtApis::GetApi, uint32_t version) {
   if (version >= 1 && version <= ORT_API_VERSION)
-    return &ort_api_1_to_27;
+    return &ort_api_1_to_27;/*支持的版本*/
 
   fprintf(stderr,
           "The requested API version [%u] is not available, only API versions [1, %u] are supported in this build."
@@ -4985,6 +4989,7 @@ ORT_API(const OrtApi*, OrtApis::GetApi, uint32_t version) {
   return nullptr;  // Unsupported version
 }
 
+/*返回版本号*/
 ORT_API(const char*, OrtApis::GetVersionString) {
   static_assert(onnxruntime::version_check::IsOrtVersionValid(ORT_VERSION),
                 "ORT_VERSION must be in the format '1.Y.Z' where Y and Z are non-negative integers without leading "

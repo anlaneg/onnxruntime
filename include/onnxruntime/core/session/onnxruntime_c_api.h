@@ -151,7 +151,7 @@ extern "C" {
 #endif
 
 // __VA_ARGS__ on Windows and Linux are different
-#define ORT_API(RETURN_TYPE, NAME, ...) RETURN_TYPE ORT_API_CALL NAME(__VA_ARGS__) NO_EXCEPTION
+#define ORT_API(RETURN_TYPE/*返回类型*/, NAME/*函数名称*/, ...) RETURN_TYPE ORT_API_CALL NAME(__VA_ARGS__) NO_EXCEPTION
 
 #define ORT_API_T(RETURN_TYPE, NAME, ...) \
   RETURN_TYPE(ORT_API_CALL* NAME)(__VA_ARGS__) NO_EXCEPTION
@@ -161,7 +161,7 @@ extern "C" {
   NO_EXCEPTION ORT_MUST_USE_RESULT
 
 // XXX: Unfortunately, SAL annotations are known to not work with function pointers
-#define ORT_API2_STATUS(NAME, ...) \
+#define ORT_API2_STATUS(NAME/*函数名称*/, ...) \
   _Check_return_ _Ret_maybenull_ OrtStatusPtr(ORT_API_CALL* NAME)(__VA_ARGS__) NO_EXCEPTION ORT_MUST_USE_RESULT
 
 // Used in *.cc files. Almost as same as ORT_API_STATUS, except without ORT_MUST_USE_RESULT and ORT_EXPORT

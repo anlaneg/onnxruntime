@@ -220,7 +220,7 @@ void LogRuntimeError(uint32_t session_id, const common::Status& status, const ch
 // Check condition. if met, return status.
 #define ORT_RETURN_IF(condition, ...)                                                                          \
   do {                                                                                                         \
-    if (condition) {                                                                                           \
+    if (condition) {/*条件为真，报错*/                                                                                           \
       return ::onnxruntime::common::Status(::onnxruntime::common::ONNXRUNTIME,                                 \
                                            ::onnxruntime::common::FAIL,                                        \
                                            ::onnxruntime::MakeString(ORT_WHERE.ToString(), " ", __VA_ARGS__)); \
@@ -229,6 +229,7 @@ void LogRuntimeError(uint32_t session_id, const common::Status& status, const ch
 
 // Check condition. if not met, return status.
 #define ORT_RETURN_IF_NOT(condition, ...) \
+	/*条件为假，报错*/\
   ORT_RETURN_IF(!(condition), __VA_ARGS__)
 
 // Macros to disable the copy and/or move ctor and assignment methods

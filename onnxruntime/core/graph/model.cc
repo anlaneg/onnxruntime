@@ -546,6 +546,7 @@ Status Model::Load(ModelProto&& model_proto,
 template <typename T, typename Loader>
 static Status LoadModelHelper(const T& file_path, Loader loader) {
   int fd;
+  /*以只读方式打开file_path*/
   Status status = Env::Default().FileOpenRd(file_path, fd);
   if (!status.IsOK()) {
     if (status.Category() == common::SYSTEM) {
@@ -562,6 +563,7 @@ static Status LoadModelHelper(const T& file_path, Loader loader) {
   }
 
   ORT_TRY {
+	  /*从fd中加载模型*/
     status = loader(fd);
   }
   ORT_CATCH(const OnnxRuntimeException& ex) {
@@ -580,6 +582,7 @@ static Status LoadModelHelper(const T& file_path, Loader loader) {
     ORT_IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return status;
   }
+  /*关闭文件*/
   return Env::Default().FileClose(fd);
 }
 
@@ -687,6 +690,7 @@ static Status SaveModelWithExternalInitializers(Model& model,
   return Env::Default().FileClose(fd);
 }
 
+/*指定路径加载Model*/
 Status Model::Load(const PathString& file_path,
                    ONNX_NAMESPACE::ModelProto& model_proto) {
   return LoadModel(file_path, model_proto);
@@ -744,6 +748,7 @@ using ::google::protobuf::io::CodedInputStream;
 using ::google::protobuf::io::FileInputStream;
 using ::google::protobuf::io::ZeroCopyInputStream;
 
+/*通过fd加载模型*/
 Status Model::Load(int fd, ONNX_NAMESPACE::ModelProto& model_proto) {
   if (fd < 0) {
     return Status(ONNXRUNTIME, INVALID_ARGUMENT, "<p_fd> less than 0.");
@@ -771,6 +776,7 @@ Status Model::Load(int fd, ONNX_NAMESPACE::ModelProto& model_proto) {
 
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
   cis.SetTotalBytesLimit(INT_MAX);
+  /*解析模型文件，填充到model_proto中*/
   if (!model_proto->ParseFromCodedStream(&cis)) {
     return Status(ONNXRUNTIME, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }

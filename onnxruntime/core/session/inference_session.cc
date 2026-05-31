@@ -777,7 +777,7 @@ InferenceSession::InferenceSession(const SessionOptions& session_options,
 
 #if !defined(ORT_MINIMAL_BUILD)
 InferenceSession::InferenceSession(const SessionOptions& session_options, const Environment& session_env,
-                                   const PathString& model_uri)
+                                   const PathString& model_uri/*模型路径*/)
     : model_location_(model_uri),
       graph_transformer_mgr_(session_options.max_num_graph_transformation_steps),
       environment_(session_env) {
@@ -1091,7 +1091,7 @@ common::Status InferenceSession::LoadWithLoader(std::function<common::Status(std
     }
 
     std::shared_ptr<onnxruntime::Model> p_tmp_model;
-    status = loader(p_tmp_model);
+    status = loader(p_tmp_model);/*执行loader*/
     ORT_RETURN_IF_ERROR_SESSIONID_(status);
 
     model_ = p_tmp_model;
@@ -1125,7 +1125,7 @@ common::Status InferenceSession::LoadWithLoader(std::function<common::Status(std
 }
 
 common::Status InferenceSession::LoadOnnxModel(const PathString& model_uri) {
-  model_location_ = model_uri;
+  model_location_ = model_uri;/*设置路径*/
   auto loader = [this](std::shared_ptr<onnxruntime::Model>& model) {
 #ifdef ENABLE_LANGUAGE_INTEROP_OPS
     LoadInterOp(model_location_, interop_domains_, [&](const char* msg) { LOGS(*session_logger_, WARNING) << msg; });
@@ -1137,6 +1137,7 @@ common::Status InferenceSession::LoadOnnxModel(const PathString& model_uri) {
 
     const bool strict_shape_type_inference = session_options_.config_options.GetConfigOrDefault(
                                                  kOrtSessionOptionsConfigStrictShapeTypeInference, "0") == "1";
+    /*执行加载*/
     return onnxruntime::Model::Load(model_location_, model, HasLocalSchema() ? &custom_schema_registries_ : nullptr,
                                     *session_logger_,
                                     ModelOptions(true, strict_shape_type_inference,
@@ -1177,7 +1178,7 @@ common::Status InferenceSession::Load(const PathString& model_uri) {
                            "Invoke Load().");
   }
 
-  return LoadOnnxModel(model_uri);
+  return LoadOnnxModel(model_uri);/*按模型路径加载*/
 #else
   return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "ONNX format model is not supported in this build.");
 #endif
@@ -2854,7 +2855,8 @@ static common::Status CheckTypes(MLDataType actual, MLDataType expected, const s
 common::Status InferenceSession::ValidateInputsOutputs(gsl::span<const std::string> names,
                                                        gsl::span<const OrtValue> feeds_fetches,
                                                        const InputOutputDefMetaMap& input_output_meta_map,
-                                                       ArgType arg_type) const {
+                                                       ArgType arg_type/*输入/输出*/) const {
+	/*仅支持两种key*/
   ORT_ENFORCE(arg_type == ArgType::kInput || arg_type == ArgType::kOutput, "Valid values kInput, kOutput");
 
   const bool is_inputs = arg_type == ArgType::kInput;
@@ -2873,6 +2875,7 @@ common::Status InferenceSession::ValidateInputsOutputs(gsl::span<const std::stri
 #endif
 
   if (names.size() != feeds_fetches.size()) {
+	  /*两者长度不一致*/
     return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, feed_fetches_moniker, " names has ", names.size(),
                            " elements, but ", feed_fetches_moniker, " has ", feeds_fetches.size(), " elements.");
   }
@@ -2882,16 +2885,20 @@ common::Status InferenceSession::ValidateInputsOutputs(gsl::span<const std::stri
 
     auto iter = input_output_meta_map.find(name);
     if (input_output_meta_map.end() == iter) {
+    	/*此name没有找到*/
       return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid ", input_output_moniker, " name: ", name);
     }
 
+    /*取name对应的数据*/
     const auto& input_output_ml_value = feeds_fetches[i];
 
     // For outputs the user may supply an unallocated placeholder.
     if (!is_inputs && !input_output_ml_value.IsAllocated()) {
+    	//输出可以不传内存
       continue;
     }
 
+    /*取数据期待的类型*/
     auto expected_type = iter->second.ml_data_type;
 
     if (input_output_ml_value.IsTensor()) {
@@ -2900,6 +2907,7 @@ common::Status InferenceSession::ValidateInputsOutputs(gsl::span<const std::stri
           && !utils::IsOptionalTensor(expected_type)
 #endif
       ) {
+    	  /*类型不一致*/
         return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, input_output_moniker, " with name: '", name,
                                "' expected to be of type: ", static_cast<int>(expected_type->type_), " but received a tensor");
       }
@@ -3134,6 +3142,7 @@ Status InferenceSession::SetEpDynamicOptions(gsl::span<const char* const> keys,
   return retval;
 }
 
+//ONNX Runtime 对外暴露的【模型推理入口】
 Status InferenceSession::Run(const RunOptions& run_options,
                              gsl::span<const std::string> feed_names, gsl::span<const OrtValue> feeds,
                              gsl::span<const std::string> output_names, std::vector<OrtValue>* p_fetches,
@@ -3221,6 +3230,7 @@ Status InferenceSession::RunImpl(const RunOptions& run_options,
       // log evaluation start to trace logging provider
       env.GetTelemetryProvider().LogEvaluationStart(session_id_);
 
+      /*校验输入输出*/
       ORT_RETURN_IF_ERROR_SESSIONID_(ValidateInputs(feed_names, feeds));
       ORT_RETURN_IF_ERROR_SESSIONID_(ValidateOutputs(output_names, p_fetches));
 
@@ -3302,6 +3312,7 @@ Status InferenceSession::RunImpl(const RunOptions& run_options,
 #endif
 
       if (retval.IsOK()) {
+    	  /*在此处跑图执行*/
         retval = utils::ExecuteGraph(*session_state_, feeds_fetches_manager, feeds, *p_fetches,
                                      session_options_.execution_mode,
                                      run_options,

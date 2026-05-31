@@ -123,7 +123,7 @@ CreateThreadPoolHelper(Env* env, OrtThreadPoolParams options) {
     }
   }
   if (options.thread_pool_size <= 1) {
-    return nullptr;
+    return nullptr;/*线程数设置有误*/
   }
   // override affinity setting if specified from customer
   if (!options.affinity_str.empty()) {
@@ -171,6 +171,7 @@ CreateThreadPoolHelper(Env* env, OrtThreadPoolParams options) {
                                        ? std::min(std::max(options.spin_backoff_max, 1U),
                                                   concurrency::kSpinBackoffMaxLimit)
                                        : 1U;
+  /*创建线程池对象*/
   return std::make_unique<ThreadPool>(env, to, options.name, options.thread_pool_size,
                                       spin_us, /*force_hybrid*/ false, backoff_max);
 }
@@ -181,7 +182,7 @@ CreateThreadPool(Env* env, OrtThreadPoolParams options, ThreadPoolType tpool_typ
   // However, parallel execution relies on the existence of a separate threadpool. Hence we allow eigen threadpools
   // to be created for parallel execution.
   ORT_UNUSED_PARAMETER(tpool_type);
-  return CreateThreadPoolHelper(env, options);
+  return CreateThreadPoolHelper(env, options);/*创建线程池*/
 }
 
 }  // namespace concurrency

@@ -82,7 +82,7 @@ std::ostream& operator<<(std::ostream& os, const OrtThreadPoolParams& params);
 
 struct OrtThreadingOptions {
   // Params for creating the threads that parallelizes execution of an op
-  OrtThreadPoolParams intra_op_thread_pool_params;
+  OrtThreadPoolParams intra_op_thread_pool_params;/*线程池参数*/
 
   // Params for creating the threads that parallelizes execution across ops
   OrtThreadPoolParams inter_op_thread_pool_params;

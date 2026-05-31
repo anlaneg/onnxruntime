@@ -125,6 +125,7 @@ Status Environment::Create(std::unique_ptr<logging::LoggingManager> logging_mana
                            bool create_global_thread_pools,
                            const OrtKeyValuePairs* config_entries) {
   environment = std::make_unique<Environment>();
+  /*执行初始化*/
   auto status = environment->Initialize(std::move(logging_manager), tp_options, create_global_thread_pools,
                                         config_entries);
   return status;
@@ -244,9 +245,10 @@ Status Environment::CreateAndRegisterAllocator(const OrtMemoryInfo& mem_info, co
   return RegisterAllocatorImpl(allocator_ptr);
 }
 
+/*初始化Env*/
 Status Environment::Initialize(std::unique_ptr<logging::LoggingManager> logging_manager,
                                const OrtThreadingOptions* tp_options,
-                               bool create_global_thread_pools,
+                               bool create_global_thread_pools/*是否创建线程池*/,
                                const OrtKeyValuePairs* config_entries) {
   auto status = Status::OK();
 
@@ -265,6 +267,7 @@ Status Environment::Initialize(std::unique_ptr<logging::LoggingManager> logging_
 
   // create thread pools
   if (create_global_thread_pools) {
+	  /*创建线程池*/
     ORT_RETURN_IF_ERROR(SetGlobalThreadingOptions(*tp_options));
   }
 
@@ -274,6 +277,7 @@ Status Environment::Initialize(std::unique_ptr<logging::LoggingManager> logging_
     std::call_once(schemaRegistrationOnceFlag, []() {
       auto& domainToVersionRangeInstance = ONNX_NAMESPACE::OpSchemaRegistry::DomainToVersionRange::Instance();
       if (domainToVersionRangeInstance.Map().find(onnxruntime::kMSDomain) == domainToVersionRangeInstance.Map().end()) {
+    	  /*没有此key,加入此key映射1，1*/
         // External shared providers may have already added kMSDomain
         domainToVersionRangeInstance.AddDomainToVersion(onnxruntime::kMSDomain, 1, 1);
       }
@@ -284,7 +288,7 @@ Status Environment::Initialize(std::unique_ptr<logging::LoggingManager> logging_
       // latest ONNX version
       auto onnx_version = domainToVersionRangeInstance.LastReleaseVersionMap()
                               .find(ONNX_NAMESPACE::ONNX_DOMAIN)
-                              ->second;
+                              ->second;/*版本号*/
       domainToVersionRangeInstance.AddDomainToVersion(onnxruntime::kMSInternalNHWCDomain, 1, onnx_version);
 
       domainToVersionRangeInstance.AddDomainToVersion(onnxruntime::kPytorchAtenDomain, 1, 1);
@@ -390,8 +394,10 @@ Internal copy node
   return status;
 }
 
+/*创建线程池*/
 Status Environment::SetGlobalThreadingOptions(const OrtThreadingOptions& tp_options) {
   if (create_global_thread_pools_) {
+	  /*线程池已创建*/
     return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Global thread pools have already been created, cannot replace them");
   }
   create_global_thread_pools_ = true;
@@ -399,11 +405,13 @@ Status Environment::SetGlobalThreadingOptions(const OrtThreadingOptions& tp_opti
   if (to.name == nullptr) {
     to.name = ORT_TSTR("intra-op");
   }
+  /*创建intra线程池*/
   intra_op_thread_pool_ = concurrency::CreateThreadPool(&Env::Default(), to, concurrency::ThreadPoolType::INTRA_OP);
   to = tp_options.inter_op_thread_pool_params;
   if (to.name == nullptr) {
     to.name = ORT_TSTR("inter-op");
   }
+  /*创建inter线程池*/
   inter_op_thread_pool_ = concurrency::CreateThreadPool(&Env::Default(), to, concurrency::ThreadPoolType::INTER_OP);
   return Status::OK();
 }

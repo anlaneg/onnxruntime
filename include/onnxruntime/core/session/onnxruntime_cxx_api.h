@@ -76,7 +76,8 @@ struct Exception : std::exception {
   } while (false)
 #endif
 #else
-#define ORT_CXX_API_THROW(string, code) \
+/*扔异常*/
+#define ORT_CXX_API_THROW(string/*错误原因*/, code/*错误码*/) \
   throw Ort::Exception(string, code)
 #endif
 
@@ -129,9 +130,10 @@ struct Global {
     //
     // This DOES NOT make it safe to _use_ arbitrary ORT C++ APIs when
     // initializing static members, however.
-    static const OrtApi* api = DefaultInit();
+    static const OrtApi* api = DefaultInit();/*静态变量初始化，实现单例*/
 
     if (newValue) {
+    	/*如果传了新值，容许将api替换掉*/
       api = newValue;
     }
 

@@ -370,7 +370,7 @@ class alignas(CACHE_LINE_BYTES) LoopCounter {
 #pragma warning(pop) /* Padding added in LoopCounterShard, LoopCounter */
 #endif
 
-ThreadPool::ThreadPool(Env* env,
+ThreadPool::ThreadPool(Env* env/*利用evn->createThread创建线程*/,
                        const ThreadOptions& thread_options,
                        const NAME_CHAR_TYPE* name,
                        int degree_of_parallelism,

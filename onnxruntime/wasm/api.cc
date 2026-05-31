@@ -64,6 +64,7 @@ OrtErrorCode CheckStatus(OrtStatusPtr status) {
     }                                                         \
   } while (false)
 
+/*调用API_NAME并检查返回值，如果不是ORT_OK,则返回nullptr*/
 #define RETURN_NULLPTR_IF_ERROR(ORT_API_NAME, ...)           \
   do {                                                       \
     if (CHECK_STATUS(ORT_API_NAME, __VA_ARGS__) != ORT_OK) { \

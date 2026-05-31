@@ -94,10 +94,11 @@ static std::atomic<void*>& DefaultLoggerManagerInstance() noexcept {
   // As the first thing LoggingManager::Log does is check the static DefaultLoggerManagerInstance() is not null,
   // any further damage should be prevented (in theory).
   static std::atomic<void*> default_instance;
-  return default_instance;
+  return default_instance;/*首次进入时返回的atomic保护的指针为NULL*/
 }
 
 LoggingManager* LoggingManager::GetDefaultInstance() {
+	/*取默认的LoggingManager指针，可能是null*/
   return static_cast<LoggingManager*>(DefaultLoggerManagerInstance().load());
 }
 
@@ -109,6 +110,7 @@ LoggingManager* LoggingManager::GetDefaultInstance() {
 #pragma warning(disable : 26426)
 #endif
 
+/*log使用的mutex*/
 static std::mutex& DefaultLoggerMutex() noexcept {
   static std::mutex mutex;
   return mutex;
@@ -142,11 +144,13 @@ LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity default_min
       default_max_vlog_level_{default_max_vlog_level},
       owns_default_logger_{false} {
   if (sink_ == nullptr) {
+	  /*不得为空*/
     ORT_THROW("ISink must be provided.");
   }
 
   if (instance_type == InstanceType::Default) {
     if (default_logger_id == nullptr) {
+    	/*log id不得为空*/
       ORT_THROW("default_logger_id must be provided if instance_type is InstanceType::Default");
     }
 
@@ -155,15 +159,16 @@ LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity default_min
     std::lock_guard<std::mutex> guard(DefaultLoggerMutex());
 
     if (DefaultLoggerManagerInstance().load() != nullptr) {
+    	/*已被初始化，异常*/
       ORT_THROW("Only one instance of LoggingManager created with InstanceType::Default can exist at any point in time.");
     }
 
     // If the following assertion passes, using the atomic to validate calls to Log should
     // be reasonably economical.
     static_assert(std::remove_reference_t<decltype(DefaultLoggerManagerInstance())>::is_always_lock_free);
-    DefaultLoggerManagerInstance().store(this);
+    DefaultLoggerManagerInstance().store(this);/*存入此变量*/
 
-    CreateDefaultLogger(*default_logger_id);
+    CreateDefaultLogger(*default_logger_id);/*初始化log*/
 
     owns_default_logger_ = true;
   }
@@ -194,6 +199,7 @@ void LoggingManager::CreateDefaultLogger(const std::string& logger_id) {
 }
 
 std::unique_ptr<Logger> LoggingManager::CreateLogger(const std::string& logger_id) {
+	/*返回Log对象*/
   return CreateLogger(logger_id, default_min_severity_, default_filter_user_data_, default_max_vlog_level_);
 }
 
@@ -201,11 +207,13 @@ std::unique_ptr<Logger> LoggingManager::CreateLogger(const std::string& logger_i
                                                      const Severity severity,
                                                      bool filter_user_data,
                                                      int vlog_level) {
+	/*返回Log对象*/
   auto logger = std::make_unique<Logger>(*this, logger_id, severity, filter_user_data, vlog_level);
   return logger;
 }
 
 void LoggingManager::Log(const std::string& logger_id, const Capture& message) const {
+	/*执行log输出*/
   sink_->Send(GetTimestamp(), logger_id, message);
 }
 
@@ -311,7 +319,7 @@ std::unique_ptr<ISink> EnhanceSinkWithEtw(std::unique_ptr<ISink> existing_sink, 
   // On non-Windows platforms, just return the existing logger
   (void)original_severity;
   (void)etw_severity;
-  return existing_sink;
+  return existing_sink;/*直接返回sink*/
 #endif  // _WIN32
 }
 
@@ -323,7 +331,7 @@ Severity OverrideLevelWithEtw(Severity original_severity) {
     return manager.MapLevelToSeverity();
   }
 #endif  // _WIN32
-  return original_severity;
+  return original_severity;/*直接返回*/
 }
 
 bool LoggingManager::AddSinkOfType(SinkType sink_type, std::function<std::unique_ptr<ISink>()> sinkFactory,

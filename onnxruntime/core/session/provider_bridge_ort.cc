@@ -1318,7 +1318,7 @@ struct ProviderHostImpl : ProviderHost {
                                                                                                 model_saving_options));
   };
   const ModelMetaData& Model__MetaData(const Model* p) const noexcept override { return p->MetaData(); };
-  Status Model__Load(const PathString& file_path, /*out*/ ONNX_NAMESPACE::ModelProto& model_proto) override { return Model::Load(file_path, model_proto); }
+  Status Model__Load(const PathString& file_path, /*out*/ ONNX_NAMESPACE::ModelProto& model_proto/*出参，模型内容*/) override { return Model::Load(file_path, model_proto); }
 
   // Graph (wrapped)
   std::unique_ptr<GraphViewer> Graph__CreateGraphViewer(const Graph* p) override { return std::make_unique<GraphViewer>(*p); }
@@ -1872,7 +1872,7 @@ struct ProviderHostImpl : ProviderHost {
   const Float8E8M0* Tensor__Data_Float8E8M0(const Tensor* p) override { return p->Data<Float8E8M0>(); }
   bool Tensor__IsDataType_Float8E8M0(const Tensor* p) noexcept override { return p->IsDataType<Float8E8M0>(); }
 #endif
-} g_provider_host;
+} g_provider_host;/*定义g_provider_host*/
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma warning(pop)
@@ -1890,7 +1890,7 @@ struct ProviderSharedLibrary {
     void (*PProvider_SetHost)(void*);
     ORT_RETURN_IF_ERROR(Env::Default().GetSymbolFromLibrary(handle_, "Provider_SetHost", (void**)&PProvider_SetHost));
 
-    PProvider_SetHost(&g_provider_host);
+    PProvider_SetHost(&g_provider_host);/*设置gHost*/
 
     return Status::OK();
   }

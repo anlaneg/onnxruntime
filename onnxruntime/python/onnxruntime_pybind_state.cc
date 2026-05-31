@@ -2737,10 +2737,12 @@ including arg name, arg type (contains both type and shape).)pbdoc")
             return arr; }, "node shape (assuming the node holds a tensor)");
 
   py::class_<SessionObjectInitializer> sessionObjectInitializer(m, "SessionObjectInitializer");
+  // 将PyInferenceSession实现绑定到InferenceSession
   py::class_<PyInferenceSession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model.)pbdoc")
       // In Python3, a Python bytes object will be passed to C++ functions that accept std::string or char*
       // without any conversion. So this init method can be used for model file path (string) and model content (bytes)
-      .def(py::init([](const PySessionOptions& so, const std::string arg, bool is_arg_file_name,
+      // 增加初始化函数
+      .def(py::init([](const PySessionOptions& so, const std::string arg/*模型路径*/, bool is_arg_file_name,
                        bool load_config_from_model = false) {
         std::unique_ptr<PyInferenceSession> sess;
 

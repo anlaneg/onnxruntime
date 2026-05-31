@@ -36,8 +36,9 @@ class MatMulComputeHelper {
     // * If the first argument is 1 - D, it is promoted to a matrix by prepending a 1 to its dimensions.After matrix multiplication the prepended 1 is removed.
     // * If the second argument is 1 - D, it is promoted to a matrix by appending a 1 to its dimensions.After matrix multiplication the appended 1 is removed.
 
-    size_t left_num_dims = orig_left_shape.NumDimensions();
+    size_t left_num_dims = orig_left_shape.NumDimensions();/*取维度数*/
     size_t right_num_dims = orig_right_shape.NumDimensions();
+    /*维度数均需大于等于1（0维对应的就是标量）*/
     ORT_RETURN_IF_NOT(left_num_dims >= 1 && right_num_dims >= 1, "left_num_dims and right_num_dims must be >= 1");
 
     // Special cases below for right_shape being 2D and left_shape > 2D by flattening left_shape to 2D

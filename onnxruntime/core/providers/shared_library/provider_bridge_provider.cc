@@ -88,7 +88,7 @@ namespace onnxruntime {
 // "Global initializer calls a non-constexpr function."
 #pragma warning(disable : 26426)
 #endif
-ProviderHost* g_host = Provider_GetHost();
+ProviderHost* g_host = Provider_GetHost();/*设置g_host*/
 ProviderHostCPU& g_host_cpu = g_host->GetProviderHostCPU();
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma warning(pop)

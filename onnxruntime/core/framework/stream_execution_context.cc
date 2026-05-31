@@ -177,7 +177,7 @@ void StreamExecutionContext::RecycleNodeInputs(onnxruntime::NodeIndex node_index
   }
 }
 
-void RunSince(size_t stream_idx, StreamExecutionContext& ctx, SessionScope& session_scope, const bool& terminate_flag, size_t since) {
+void RunSince(size_t stream_idx/*当前要执行的流编号*/, StreamExecutionContext& ctx, SessionScope& session_scope, const bool& terminate_flag/*终止标志（中途停止推理）*/, size_t since/*从第几步开始执行*/) {
   if (!ctx.TaskStatus().IsOK()) {
     // already in bad status, terminate it
     ctx.CompleteTask();
@@ -201,8 +201,8 @@ void RunSince(size_t stream_idx, StreamExecutionContext& ctx, SessionScope& sess
 
   // get logic stream
   auto& execution_plan = ctx.GetSessionState().GetExecutionPlan()->execution_plan;
-  auto& logic_stream = execution_plan[stream_idx];
-  size_t end = logic_stream->steps_.size();
+  auto& logic_stream = execution_plan[stream_idx];// 取当前流
+  size_t end = logic_stream->steps_.size();// 总共有多少个步骤
 #ifdef ENABLE_TRAINING
   auto* range = ctx.GetCurrentRange();
   if (range)
@@ -225,10 +225,12 @@ void RunSince(size_t stream_idx, StreamExecutionContext& ctx, SessionScope& sess
 #endif
 
   while (since < end) {
+	// 中途检查：如果已经出错 → 退出
     if (!ctx.TaskStatus().IsOK()) {
       ctx.CompleteTask();
       return;
     }
+    // 中途检查：如果用户终止 → 退出
     if (terminate_flag) {
       Status status_made = ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "Exiting due to terminate flag being set to true.");
       ctx.SetStatus(status_made);
@@ -238,6 +240,7 @@ void RunSince(size_t stream_idx, StreamExecutionContext& ctx, SessionScope& sess
     bool continue_flag = true;
     Status status;
     ORT_TRY {
+    	//真正执行此步骤
       status = logic_stream->steps_[since]->Execute(ctx, stream_idx, session_scope, terminate_flag, continue_flag);
     }
     ORT_CATCH(const std::exception& ex) {

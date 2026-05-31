@@ -26,6 +26,7 @@ struct OrtStatus {
 
 namespace {
 inline OrtStatus* NewStatus(size_t clen) {
+	/*在OrtStatus之后跟字符串内容*/
   auto* buf = new (std::nothrow) uint8_t[sizeof(OrtStatus) + clen];
   if (buf == nullptr) return nullptr;  // OOM. What we can do here? abort()?
   return new (buf) OrtStatus;
@@ -44,16 +45,18 @@ inline void DeleteStatus(OrtStatus* ort_status) {
 }  // namespace
 
 // Even we say it may not return NULL, indeed it may.
+/*给定code,msg将其封装成OrtStatus结构体*/
 _Check_return_ _Ret_notnull_ OrtStatus* ORT_API_CALL OrtApis::CreateStatus(OrtErrorCode code,
                                                                            _In_z_ const char* msg) NO_EXCEPTION {
   assert(!(code == 0 && msg != nullptr));
+  /*字符串长度*/
   SafeInt<size_t> clen(nullptr == msg ? 0 : strnlen(msg, onnxruntime::kMaxStrLen));
   OrtStatus* p = NewStatus(clen);
   if (p == nullptr)
     return nullptr;
   p->code = code;
-  memcpy(p->msg, msg, clen);
-  p->msg[clen] = '\0';
+  memcpy(p->msg, msg, clen);/*填写字符内容*/
+  p->msg[clen] = '\0';/*写结束符*/
   return p;
 }
 
@@ -101,10 +104,12 @@ Status ToStatusAndRelease(OrtStatus* ort_status, common::StatusCategory category
 #pragma warning(pop)
 #endif
 
+/*从OrtStatus中取错误码*/
 ORT_API(OrtErrorCode, OrtApis::GetErrorCode, _In_ const OrtStatus* status) {
   return status->code;
 }
 
+/*从OrtStatus中取报错信息*/
 ORT_API(const char*, OrtApis::GetErrorMessage, _In_ const OrtStatus* status) {
   return status->msg;
 }
