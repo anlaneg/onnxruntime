@@ -460,7 +460,7 @@ static OrtStatus* CreateSessionAndLoadSingleModelImpl(_In_ const OrtSessionOptio
 // Caller should provide either a model file path, model_data + model_data_length, or a model package directory.
 static OrtStatus* CreateSessionAndLoadModelImpl(_In_ const OrtSessionOptions* options,
                                                 const onnxruntime::Environment& env,
-                                                _In_opt_z_ const ORTCHAR_T* model_path,
+                                                _In_opt_z_ const ORTCHAR_T* model_path/*模型路径*/,
                                                 _In_opt_ const void* model_data/*模型数据*/,
                                                 size_t model_data_length/*默认数据长度*/,
                                                 std::unique_ptr<onnxruntime::InferenceSession>& sess) {
@@ -648,7 +648,7 @@ static OrtStatus* CreateSessionAndLoadModelImpl(_In_ const OrtSessionOptions* op
 
 // Creates an InferenceSession and loads the model.
 // Caller should provide either model_path, or modal_data + model_data_length.
-OrtStatus* CreateSessionAndLoadModel(_In_ const OrtSessionOptions* options,
+OrtStatus* CreateSessionAndLoadModel(_In_ const OrtSessionOptions* options/*session选项*/,
                                      _In_ const OrtEnv* env,
                                      _In_opt_z_ const ORTCHAR_T* model_path/*模型路径*/,
                                      _In_opt_ const void* model_data,
@@ -770,6 +770,7 @@ static Status ValidateCompiledModelCompatibility(InferenceSession& sess) {
 }
 #endif  // !defined(ORT_MINIMAL_BUILD)
 
+/*初始化session*/
 OrtStatus* InitializeSession(_In_ const OrtSessionOptions* options,
                              _In_ onnxruntime::InferenceSession& sess,
                              _Inout_opt_ OrtPrepackedWeightsContainer* prepacked_weights_container) {

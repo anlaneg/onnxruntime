@@ -130,10 +130,10 @@ struct Global {
     //
     // This DOES NOT make it safe to _use_ arbitrary ORT C++ APIs when
     // initializing static members, however.
-    static const OrtApi* api = DefaultInit();/*静态变量初始化，实现单例*/
+    static const OrtApi* api = DefaultInit();/*使用ORT_API_MANUAL_INIT初始化静态变量初始化，实现单例*/
 
     if (newValue) {
-    	/*如果传了新值，容许将api替换掉*/
+      /*如果传了新值，容许将api替换掉*/
       api = newValue;
     }
 
@@ -2022,7 +2022,7 @@ struct Session : detail::SessionImpl<OrtSession> {
   explicit Session(std::nullptr_t) {}
   explicit Session(OrtSession* p) : SessionImpl{p} {}  ///< C API Interop
 
-  Session(const Env& env, const ORTCHAR_T* model_path, const SessionOptions& options);
+  Session(const Env& env, const ORTCHAR_T* model_path/*模型路径*/, const SessionOptions& options/*session选项*/);
 
   /// Wraps OrtApi::CreateSessionWithPrepackedWeightsContainer
   Session(const Env& env, const ORTCHAR_T* model_path, const SessionOptions& options,

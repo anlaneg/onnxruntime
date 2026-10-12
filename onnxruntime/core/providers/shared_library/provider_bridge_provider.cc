@@ -203,6 +203,7 @@ template <>
 MLDataType DataTypeImpl::GetTensorType<int32_t>() { return Provider_GetHost()->DataTypeImpl__GetTensorType_int32(); }
 template <>
 MLDataType DataTypeImpl::GetTensorType<uint32_t>() { return Provider_GetHost()->DataTypeImpl__GetTensorType_uint32(); }
+/*模板化int64_t*/
 template <>
 MLDataType DataTypeImpl::GetTensorType<int64_t>() { return Provider_GetHost()->DataTypeImpl__GetTensorType_int64(); }
 template <>

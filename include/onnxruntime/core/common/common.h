@@ -234,11 +234,13 @@ void LogRuntimeError(uint32_t session_id, const common::Status& status, const ch
 
 // Macros to disable the copy and/or move ctor and assignment methods
 // These are usually placed in the private: declarations for a class.
-
+/*禁止copy*/
 #define ORT_DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
 
+/*禁止赋值*/
 #define ORT_DISALLOW_ASSIGNMENT(TypeName) TypeName& operator=(const TypeName&) = delete
 
+/*禁止赋值与copy*/
 #define ORT_DISALLOW_COPY_AND_ASSIGNMENT(TypeName) \
   ORT_DISALLOW_COPY(TypeName);                     \
   ORT_DISALLOW_ASSIGNMENT(TypeName)

@@ -192,6 +192,7 @@ class Model {
   ModelMetaData& MetaData() noexcept;
 
   // Gets the path from which the model was loaded, if any.
+  /*返回模型路径*/
   const std::filesystem::path& ModelPath() const noexcept { return model_path_; }
 
   // Get model's main graph.
@@ -367,7 +368,7 @@ class Model {
   ModelMetaData model_metadata_;
 
   // Path to model file. May be empty.
-  std::filesystem::path model_path_;
+  std::filesystem::path model_path_;/*模型路径*/
 
   // Main graph of the model.
   std::unique_ptr<Graph> graph_;

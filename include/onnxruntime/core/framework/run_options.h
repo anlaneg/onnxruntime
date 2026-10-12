@@ -36,7 +36,7 @@ struct OrtRunOptions {
   bool only_execute_path_to_fetches = false;
 
   // Set to 'true' to enable profiling for this run.
-  bool enable_profiling = false;
+  bool enable_profiling = false;/*是否开启profiling*/
 
   // File prefix for profiling result for this run.
   // The actual filename will be: <profile_file_prefix>_<timestamp>.json

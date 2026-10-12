@@ -309,10 +309,10 @@ class DataTypeRegistry {
 
 struct TypeProtoImpl {
   const TypeProto* GetProto() const {
-    return &proto_;
+    return &proto_;/*返回typeProto指针*/
   }
   TypeProto& MutableTypeProto() {
-    return proto_;
+    return proto_;/*返回typeProto引用*/
   }
 
   TypeProto proto_;
@@ -324,6 +324,7 @@ struct TypeProtoImpl {
 struct TensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {
 };
 
+/*返回TypeProto**/
 const ONNX_NAMESPACE::TypeProto* TensorTypeBase::GetTypeProto() const {
   return impl_->GetProto();
 }
@@ -332,8 +333,8 @@ const ONNX_NAMESPACE::TypeProto* TensorTypeBase::GetTypeProto() const {
 #pragma warning(disable : 26409)
 #endif
 TensorTypeBase::TensorTypeBase()
-    : DataTypeImpl{DataTypeImpl::GeneralType::kTensor, sizeof(Tensor)},
-      impl_(new Impl()) {}
+    : DataTypeImpl{DataTypeImpl::GeneralType::kTensor/*指明类型为tensor*/, sizeof(Tensor)/*指明结构体类型大小*/},
+      impl_(new Impl()/*新建TensorTypeBase::Impl对象*/) {}
 TensorTypeBase::~TensorTypeBase() {
   delete impl_;
 }
@@ -380,7 +381,7 @@ struct SparseTensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {
 
 SparseTensorTypeBase::SparseTensorTypeBase()
     : DataTypeImpl{DataTypeImpl::GeneralType::kSparseTensor, sizeof(SparseTensor)},
-      impl_(new Impl()) {}
+      impl_(new Impl()/*新建SparseTensorTypeBase::Impl对象*/) {}
 
 SparseTensorTypeBase::~SparseTensorTypeBase() {
   delete impl_;
@@ -414,6 +415,7 @@ ONNX_NAMESPACE::TypeProto& SparseTensorTypeBase::MutableTypeProto() {
 }
 
 MLDataType SparseTensorTypeBase::Type() {
+	/*静态变量，返回sparse_tensor_base对象*/
   static SparseTensorTypeBase sparse_tensor_base;
   return &sparse_tensor_base;
 }

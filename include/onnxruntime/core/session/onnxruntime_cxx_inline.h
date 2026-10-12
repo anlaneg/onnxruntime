@@ -920,7 +920,8 @@ inline Status ProfilingEventsContainerImpl<T>::AddEvents(const std::vector<Profi
 
 /*利用logleve,logid初始化Env*/
 inline Env::Env(OrtLoggingLevel logging_level, _In_ const char* logid) {
-  ThrowOnError(GetApi().CreateEnv(logging_level, logid, &p_));/*创建Env,如失败扔异常*/
+  /*创建Env,如失败扔异常*/
+  ThrowOnError(GetApi().CreateEnv(logging_level, logid, &p_));
   if (strcmp(logid, "onnxruntime-node") == 0) {
     ThrowOnError(GetApi().SetLanguageProjection(p_, OrtLanguageProjection::ORT_PROJECTION_NODEJS));
   } else {
@@ -1418,7 +1419,7 @@ inline ExecutionMode ConstSessionOptionsImpl<T>::GetExecutionMode() const {
 }
 
 template <typename T>
-inline SessionOptionsImpl<T>& SessionOptionsImpl<T>::SetIntraOpNumThreads(int intra_op_num_threads) {
+inline SessionOptionsImpl<T>& SessionOptionsImpl<T>::SetIntraOpNumThreads(int intra_op_num_threads/*线程数*/) {
   ThrowOnError(GetApi().SetIntraOpNumThreads(this->p_, intra_op_num_threads));
   return *this;
 }

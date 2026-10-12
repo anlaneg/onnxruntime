@@ -11,7 +11,7 @@ struct OrtThreadPoolParams {
   // 0: Use default setting. (All the physical cores or half of the logical cores)
   // 1: Don't create thread pool
   // n: Create a thread pool with n threads.
-  int thread_pool_size = 0;
+  int thread_pool_size = 0;/*线程池大小*/
 
   // If it is true and thread_pool_size = 0, populate the thread affinity information in ThreadOptions.
   // Otherwise if the thread_options has affinity information, we'll use it and set it.

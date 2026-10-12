@@ -3312,7 +3312,7 @@ Status InferenceSession::RunImpl(const RunOptions& run_options,
 #endif
 
       if (retval.IsOK()) {
-    	  /*在此处跑图执行*/
+    	/*在此处跑图执行*/
         retval = utils::ExecuteGraph(*session_state_, feeds_fetches_manager, feeds, *p_fetches,
                                      session_options_.execution_mode,
                                      run_options,

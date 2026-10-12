@@ -88,10 +88,11 @@ class DataTypeImpl {
     kPrimitive = 6,
   };
 
-  const GeneralType type_;
-  const size_t size_;
+  const GeneralType type_;/*类型*/
+  const size_t size_;/*结构体大小*/
 
  protected:
+  /*初始化DataTypeImpl*/
   DataTypeImpl(GeneralType type, size_t size) : type_{type}, size_{size} {}
 
  public:
@@ -119,15 +120,15 @@ class DataTypeImpl {
   virtual const ONNX_NAMESPACE::TypeProto* GetTypeProto() const = 0;
 
   bool IsTensorType() const {
-    return type_ == GeneralType::kTensor;
+    return type_ == GeneralType::kTensor;/*是否tensor类型*/
   }
 
   bool IsTensorSequenceType() const {
-    return type_ == GeneralType::kTensorSequence;
+    return type_ == GeneralType::kTensorSequence;/*是否tensor sequence类型*/
   }
 
   bool IsSparseTensorType() const {
-    return type_ == GeneralType::kSparseTensor;
+    return type_ == GeneralType::kSparseTensor;/*是否sparse tensor类型*/
   }
 
   bool IsOptionalType() const {
@@ -135,15 +136,15 @@ class DataTypeImpl {
   }
 
   bool IsNonTensorType() const {
-    return type_ == GeneralType::kNonTensor;
+    return type_ == GeneralType::kNonTensor;/*是否non tensor类型*/
   }
 
   bool IsPrimitiveDataType() const {
-    return type_ == GeneralType::kPrimitive;
+    return type_ == GeneralType::kPrimitive;/*是primitive类型*/
   }
 
   // Returns this if this is of tensor-type and null otherwise
-  const TensorTypeBase* AsTensorType() const;
+  const TensorTypeBase* AsTensorType() const;/*类型一致，则转换为TensorTypeBase，否则返回NULL*/
 
   const SequenceTensorTypeBase* AsSequenceTensorType() const;
 
@@ -997,6 +998,7 @@ class PrimitiveDataType : public PrimitiveDataTypeBase {
   }
 };
 
+/*如果是Tensor类型，则转换为TensorTypeBase*/
 inline const TensorTypeBase* DataTypeImpl::AsTensorType() const {
   return IsTensorType() ? static_cast<const TensorTypeBase*>(this) : nullptr;
 }
@@ -1030,8 +1032,9 @@ inline const PrimitiveDataTypeBase* DataTypeImpl::AsPrimitiveDataType() const {
 // thus a simple way to pre-instantiate a given template
 // at a registration time does not currently work and the macro
 // is needed.
-#define ORT_REGISTER_TENSOR_TYPE(ELEM_TYPE)             \
+#define ORT_REGISTER_TENSOR_TYPE(ELEM_TYPE/*元素类型*/)             \
   template <>                                           \
+  /*返回TensorType*/\
   MLDataType TensorType<ELEM_TYPE>::Type() {            \
     static TensorType<ELEM_TYPE> tensor_type;           \
     return &tensor_type;                                \
@@ -1042,6 +1045,7 @@ inline const PrimitiveDataTypeBase* DataTypeImpl::AsPrimitiveDataType() const {
   }
 
 #if !defined(DISABLE_SPARSE_TENSORS)
+  /*返回SparseTensorType*/
 #define ORT_REGISTER_SPARSE_TENSOR_TYPE(ELEM_TYPE)            \
   template <>                                                 \
   MLDataType SparseTensorType<ELEM_TYPE>::Type() {            \

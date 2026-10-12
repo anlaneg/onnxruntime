@@ -919,9 +919,9 @@ ORT_API_STATUS_IMPL(OrtApis::EnableOrtCustomOps, _Inout_ OrtSessionOptions* opti
   API_IMPL_END
 }
 
-/*利用模型path创建session*/
+/*利用模型path及选项创建session*/
 ORT_API_STATUS_IMPL(OrtApis::CreateSession, _In_ const OrtEnv* env, _In_ const ORTCHAR_T* model_path/*模型路径*/,
-                    _In_ const OrtSessionOptions* options, _Outptr_ OrtSession** out/*出参，创建的session*/) {
+                    _In_ const OrtSessionOptions* options/*session选项*/, _Outptr_ OrtSession** out/*出参，创建的session*/) {
   API_IMPL_BEGIN
   std::unique_ptr<onnxruntime::InferenceSession> sess;
   *out = nullptr;
@@ -4415,6 +4415,7 @@ Second example, if we wanted to add and remove some members, we'd do this:
 static constexpr OrtApi ort_api_1_to_27 = {
     // NOTE: The ordering of these fields MUST not change after that version has shipped since existing binaries depend on this ordering.
 
+	/*提供各api的实现函数*/
     // Shipped as version 1 - DO NOT MODIFY (see above text for more information)
     &OrtApis::CreateStatus,/*创建OrtStatus结构体*/
     &OrtApis::GetErrorCode,/*从OrtStatus结构体中取错误码*/
@@ -4979,7 +4980,7 @@ static_assert(std::string_view(ORT_VERSION) == "1.27.0",
 
 ORT_API(const OrtApi*, OrtApis::GetApi, uint32_t version) {
   if (version >= 1 && version <= ORT_API_VERSION)
-    return &ort_api_1_to_27;/*支持的版本*/
+    return &ort_api_1_to_27;/*支持的版本对应的实现*/
 
   fprintf(stderr,
           "The requested API version [%u] is not available, only API versions [1, %u] are supported in this build."
@@ -5001,6 +5002,7 @@ ORT_API(const char*, OrtApis::GetBuildInfoString) {
   return ORT_BUILD_INFO;
 }
 
+/*通过api base*/
 const OrtApiBase* ORT_API_CALL OrtGetApiBase(void) NO_EXCEPTION {
   return &ort_api_base;
 }

@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
     // -----------------------------------------------------------------------
     // 1. Initialize the ONNX Runtime environment
     // -----------------------------------------------------------------------
+	/*初始化Env*/
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "onnxruntime_sample");
     std::cout << "ONNX Runtime version: " << Ort::GetVersionString() << "\n\n";
 
@@ -39,14 +40,14 @@ int main(int argc, char* argv[]) {
     // 2. Create session options (could add execution providers here)
     // -----------------------------------------------------------------------
     Ort::SessionOptions session_options;
-    session_options.SetIntraOpNumThreads(1);
+    session_options.SetIntraOpNumThreads(1);/*线程池大小为1*/
     session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
 
     // -----------------------------------------------------------------------
     // 3. Load the ONNX model from a file
     //    Generate with:  python generate_model.py
     // -----------------------------------------------------------------------
-    const std::filesystem::path model_path = (argc > 1) ? argv[1] : "add_model.onnx";
+    const std::filesystem::path model_path = (argc > 1) ? argv[1] : "add_model.onnx";/*模型路径*/
     std::cout << "Loading model: " << model_path.string() << "\n";
 
     Ort::Session session(env, model_path.native().c_str(), session_options);
